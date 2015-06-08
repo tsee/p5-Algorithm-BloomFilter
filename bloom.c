@@ -39,12 +39,11 @@ bl_alloc(const size_t n_bits, const unsigned int k_hashes,
 
   nbytes = (1ll << bl->significant_bits) / 8ll + 1ll;
 
-  bl->bitmap = malloc(nbytes);
+  bl->bitmap = calloc(sizeof(char), nbytes);
   if (!(bl->bitmap)) {
     free(bl);
     return NULL;
   }
-  memset(bl->bitmap, 0, nbytes);
 
   bl->hash_function = hashfun;
   bl->k = k_hashes;
