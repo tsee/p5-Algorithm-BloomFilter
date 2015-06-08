@@ -74,6 +74,7 @@ bl_add(bloom_t *bl, const char *value, const size_t len)
   }
 }
 
+
 int
 bl_test(bloom_t *bl, const char * value, const size_t len)
 {
@@ -91,6 +92,7 @@ bl_test(bloom_t *bl, const char * value, const size_t len)
 
   return 1;
 }
+
 
 /* Floodyberry's public-domain siphash: https://github.com/floodyberry/siphash */
 static uint64_t
@@ -117,20 +119,22 @@ bl_siphash(uint64_t k0, uint64_t k1, const unsigned char *m, size_t len)
   last7 = (uint64_t) (len & 0xff) << 56;
 
 #define sipcompress() \
-  v0 += v1; v2 += v3; \
-  v1 = ROTL64(v1,13);  v3 = ROTL64(v3,16); \
-  v1 ^= v0; v3 ^= v2; \
-  v0 = ROTL64(v0,32); \
-  v2 += v1; v0 += v3; \
-  v1 = ROTL64(v1,17); v3 = ROTL64(v3,21); \
-  v1 ^= v2; v3 ^= v0; \
-  v2 = ROTL64(v2,32);
+  do { \
+    v0 += v1; v2 += v3; \
+    v1 = ROTL64(v1,13);  v3 = ROTL64(v3,16); \
+    v1 ^= v0; v3 ^= v2; \
+    v0 = ROTL64(v0,32); \
+    v2 += v1; v0 += v3; \
+    v1 = ROTL64(v1,17); v3 = ROTL64(v3,21); \
+    v1 ^= v2; v3 ^= v0; \
+    v2 = ROTL64(v2,32); \
+  } while (0)
 
   for (i = 0, blocks = (len & ~7); i < blocks; i += 8) {
     mi = U8TO64_LE(m + i);
     v3 ^= mi;
-    sipcompress()
-    sipcompress()
+    sipcompress();
+    sipcompress();
     v0 ^= mi;
   }
 
@@ -153,14 +157,14 @@ bl_siphash(uint64_t k0, uint64_t k1, const unsigned char *m, size_t len)
     default:;
   };
   v3 ^= last7;
-  sipcompress()
-  sipcompress()
+  sipcompress();
+  sipcompress();
   v0 ^= last7;
   v2 ^= 0xff;
-  sipcompress()
-  sipcompress()
-  sipcompress()
-  sipcompress()
+  sipcompress();
+  sipcompress();
+  sipcompress();
+  sipcompress();
   return v0 ^ v1 ^ v2 ^ v3;
 }
 
