@@ -40,13 +40,18 @@ DESTROY(bloom_t *bl)
     bl_free(bl);
 
 void
-add(bloom_t *bl, SV *value)
+add(bloom_t *bl, ...)
   PREINIT:
     char *str;
     STRLEN len;
-  CODE:
-    str = SvPVbyte(value, len);
-    bl_add(bl, str, len);
+    unsigned int i;
+    SV *value;
+  PPCODE:
+    for (i = 1; i < items; ++i) {
+      value = ST(i);
+      str = SvPVbyte(value, len);
+      bl_add(bl, str, len);
+    }
 
 IV
 test(bloom_t *bl, SV *value)

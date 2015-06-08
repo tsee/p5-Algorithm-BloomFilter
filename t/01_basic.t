@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 205;
+use Test::More tests => 207;
 use Algorithm::BloomFilter;
 
 my $bf = Algorithm::BloomFilter->new(33, 1);
@@ -9,6 +9,9 @@ isa_ok($bf, "Algorithm::BloomFilter");
 is($bf->test("foo"), 0);
 $bf->add("foo");
 is($bf->test("foo"), 1);
+$bf->add("foo", "bar", "baz");
+is($bf->test("bar"), 1);
+is($bf->test("baz"), 1);
 
 # Large bloom filter with known case and hash function
 # is known to be sufficiently accurate for these tests
