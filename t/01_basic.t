@@ -13,7 +13,7 @@ is($bf->test("foo"), 1);
 # Large bloom filter with known case and hash function
 # is known to be sufficiently accurate for these tests
 # not to fail.
-my $bf = Algorithm::BloomFilter->new(1e6, 5);
+$bf = Algorithm::BloomFilter->new(1e6, 5);
 my $n = 200;
 my @d = (1..$n);
 
