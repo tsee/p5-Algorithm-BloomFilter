@@ -12,11 +12,11 @@ struct bl_bloom_filter {
 };
 
 /* round up to nearest power of 2 - not efficient, but who cares? */
-static inline int
-S_which_power_of_two(size_t n)
+static inline uint64_t
+S_which_power_of_two(uint64_t n)
 {
-  size_t power = 1;
-  size_t num = 1;
+  uint64_t power = 1;
+  uint64_t num = 1;
   while(num < n) {
     ++power;
     num *=2;
@@ -34,10 +34,11 @@ bl_alloc(const size_t n_bits, const unsigned int k_hashes,
   if (!bl)
     return NULL;
 
-  bl->significant_bits = S_which_power_of_two(n_bits);
+  bl->significant_bits = (unsigned int)S_which_power_of_two(n_bits);
   bl->shift = 64 - bl->significant_bits;
 
-  nbytes = (2 << bl->significant_bits) / 8 + 1;
+  nbytes = (1ll << bl->significant_bits) / 8ll + 1ll;
+
   bl->bitmap = malloc(nbytes);
   if (!(bl->bitmap)) {
     free(bl);
