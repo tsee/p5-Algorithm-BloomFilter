@@ -3,26 +3,61 @@ use 5.008001;
 use strict;
 use warnings;
 
-require Exporter;
-
 our $VERSION = '0.01';
 
 require XSLoader;
 XSLoader::load('Algorithm::BloomFilter', $VERSION);
-
 
 1;
 __END__
 
 =head1 NAME
 
-Algorithm::BloomFilter - ...
+Algorithm::BloomFilter - A simple bloom filter data structure
 
 =head1 SYNOPSIS
 
   use Algorithm::BloomFilter;
+  
+  my $filter = Algorithm::BloomFilter->new($absolute_nbits, $n_hashes);
+  
+  $filter->add("foo", "bar", "baz");
+  if ($filter->test("bar")) {
+    print "Eureka! 'bar' is in!\n";
+  }
 
 =head1 DESCRIPTION
+
+This module implements a simple bloom filter in C/XS.
+
+=head1 METHODS
+
+=head2 new
+
+Constructor, takes two arguments: The absolute number of bits to use for the
+bloom filter storage (this will be rounded up to the nearest power of 2) and the
+number of hash functions to evaluate for each entry.
+
+C<Algorithm::BloomFilter> uses SipHash internally. The C part can also use other
+hash functions, but the XS wrapper currently only supports SipHash.
+
+=head2 add
+
+Given a list of values (that will be converted to byte strings),
+add those values to the bloom filter.
+
+=head2 test
+
+Given a value (which will be converted to a byte string for this operation),
+test whether that value is part of the set represented by the bloom filter.
+
+=head1 CAVEATS
+
+Requires a C<uint64_t> type. Untested on endianness other than x86_64's (little endian).
+
+=head1 SEE ALSO
+
+Wikipedia: L<http://en.wikipedia.org/wiki/Bloom_filter>
 
 =head1 AUTHOR
 
