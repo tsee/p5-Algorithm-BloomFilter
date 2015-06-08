@@ -96,7 +96,7 @@ bl_test(bloom_t *bl, const char * value, const size_t len)
 
 
 /* Floodyberry's public-domain siphash: https://github.com/floodyberry/siphash */
-static uint64_t
+static inline uint64_t
 U8TO64_LE(const unsigned char *p)
 {
   return *(const uint64_t *) p;
