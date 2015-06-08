@@ -32,6 +32,8 @@ bloom_t *
 new(const char *CLASS, UV n_bits, UV k_hashes)
   CODE:
     RETVAL = bl_alloc(n_bits, k_hashes, bl_siphash);
+    if (!RETVAL)
+      croak("Out of memory!");
   OUTPUT: RETVAL
 
 void
