@@ -225,7 +225,8 @@ bl_merge(bloom_t *into, const bloom_t * other)
 
   if (into->k != other->k
       || into->significant_bits != other->significant_bits
-      || into->nbytes != other->nbytes /* paranoia */)
+      || into->nbytes != other->nbytes /* paranoia */
+      || into->hash_function != other->hash_function)
   {
     return 1;
   }
