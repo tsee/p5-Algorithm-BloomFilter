@@ -1,6 +1,7 @@
 # Avoid archives of this distribution
 \bAlgorithm-BloomFilter-[\d\.\_]+
 
+\bMYMETA\..*$
 # Avoid version control files.
 \bRCS\b
 \bCVS\b
