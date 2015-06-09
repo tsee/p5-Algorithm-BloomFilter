@@ -59,6 +59,7 @@ bl_alloc(const size_t n_bits, const unsigned int k_hashes,
 void
 bl_free(bloom_t *bl)
 {
+  free(bl->bitmap);
   free(bl);
 }
 
