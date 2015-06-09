@@ -215,6 +215,32 @@ bl_deserialize(const char *blob, size_t blob_len, bl_hash_function_t hash_functi
 }
 
 
+int
+bl_merge(bloom_t *into, const bloom_t * other)
+{
+  size_t i;
+  size_t n;
+  char *bf1;
+  const char *bf2;
+
+  if (into->k != other->k
+      || into->significant_bits != other->significant_bits
+      || into->nbytes != other->nbytes /* paranoia */)
+  {
+    return 1;
+  }
+
+  n = into->nbytes;
+  bf1 = into->bitmap;
+  bf2 = other->bitmap;
+  for (i = 0; i < n; ++i) {
+      bf1[i] |= bf2[i];
+  }
+
+  return 0;
+}
+
+
 /* Floodyberry's public-domain siphash: https://github.com/floodyberry/siphash */
 static inline uint64_t
 U8TO64_LE(const unsigned char *p)
