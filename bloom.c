@@ -13,6 +13,8 @@ struct bl_bloom_filter {
 };
 
 #define MAX_VARINT_LENGTH 11
+#define BIT_TEST(bitfield, bit) ((bitfield)[(uint64_t)(bit) / 8] & (1 << ((uint64_t)(bit) % 8)))
+#define BIT_SET(bitfield, bit) ((bitfield)[(uint64_t)(bit) / 8] |= (1 << ((uint64_t)(bit) % 8)))
 
 /* round up to nearest power of 2 - not efficient, but who cares? */
 static inline uint64_t
@@ -73,7 +75,7 @@ bl_add(bloom_t *bl, const char *value, const size_t len)
   for (i = 0; i < k; ++i)
   {
     const uint64_t l = (l1 + i*l2) >> bl->shift;
-    bitfield[l / 8] |= 1 << (l % 8);
+    BIT_SET(bitfield, l);
   }
 }
 
@@ -90,15 +92,16 @@ bl_test(bloom_t *bl, const char * value, const size_t len)
   for (i = 0; i < k; ++i)
   {
     const uint64_t l = (l1 + i*l2) >> bl->shift;
-    if (! (bitfield[l / 8] & (1 << (l % 8))) )
+    if (! BIT_TEST(bitfield, l) )
       return 0;
   }
 
   return 1;
 }
 
+
 static void
-uint64_to_varint(unsigned char **out, uint64_t value) {
+S_uint64_to_varint(unsigned char **out, uint64_t value) {
   unsigned char *pos = *out;
   while (value >= 0x80) {              /* while we are larger than 7 bits long */
     *pos++ = (value & 0x7f) | 0x80;    /* write out the least significant 7 bits, set the high bit */
@@ -109,7 +112,7 @@ uint64_to_varint(unsigned char **out, uint64_t value) {
 }
 
 static uint64_t
-varint_to_uint64_t(unsigned char **in, size_t max_input_len)
+S_varint_to_uint64_t(unsigned char **in, size_t max_input_len)
 {
     uint64_t uv = 0;
     unsigned int lshift = 0;
@@ -165,8 +168,8 @@ bl_serialize(bloom_t *bl, char **out, size_t *out_len)
   }
   *out = cur;
 
-  uint64_to_varint((unsigned char **)&cur, (uint64_t)bl->k);
-  uint64_to_varint((unsigned char **)&cur, (uint64_t)bl->significant_bits);
+  S_uint64_to_varint((unsigned char **)&cur, (uint64_t)bl->k);
+  S_uint64_to_varint((unsigned char **)&cur, (uint64_t)bl->significant_bits);
 
   memcpy(cur, bl->bitmap, bl->nbytes);
   cur += bl->nbytes;
@@ -174,6 +177,7 @@ bl_serialize(bloom_t *bl, char **out, size_t *out_len)
   *out_len = (size_t)(cur-start) + 1;
   return 0;
 }
+
 
 bloom_t *
 bl_deserialize(const char *blob, size_t blob_len, bl_hash_function_t hash_function)
@@ -187,13 +191,13 @@ bl_deserialize(const char *blob, size_t blob_len, bl_hash_function_t hash_functi
     return NULL;
   bl->hash_function = hash_function;
 
-  bl->k = (unsigned int) varint_to_uint64_t((unsigned char **)&blob, (size_t)(end-blob));
+  bl->k = (unsigned int) S_varint_to_uint64_t((unsigned char **)&blob, (size_t)(end-blob));
   if (blob == NULL) {
     free(bl);
     return NULL;
   }
 
-  bl->significant_bits = (unsigned int) varint_to_uint64_t((unsigned char **)&blob, (size_t)(end-blob));
+  bl->significant_bits = (unsigned int) S_varint_to_uint64_t((unsigned char **)&blob, (size_t)(end-blob));
   if (blob == NULL) {
     free(bl);
     return NULL;
