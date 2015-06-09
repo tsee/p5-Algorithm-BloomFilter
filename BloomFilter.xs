@@ -91,3 +91,13 @@ deserialize(const char *CLASS, SV *blob)
     RETVAL = bl_deserialize(str, len, bl_siphash);
   OUTPUT: RETVAL
 
+void
+merge(bloom_t *self, bloom_t *other)
+  PREINIT:
+    int result;
+  CODE:
+    result = bl_merge(self, other);
+    if (result)
+      croak("Failed to merge bloom filters: "
+            "They are of incompatible sizes/configurations");
+
