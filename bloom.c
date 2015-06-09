@@ -5,11 +5,14 @@
 
 struct bl_bloom_filter {
   char *bitmap;
+  size_t nbytes;
   bl_hash_function_t hash_function;
   unsigned int k;
   unsigned int significant_bits;
-  uint64_t shift;
+  unsigned char shift;
 };
+
+#define MAX_VARINT_LENGTH 11
 
 /* round up to nearest power of 2 - not efficient, but who cares? */
 static inline uint64_t
@@ -28,7 +31,6 @@ bloom_t *
 bl_alloc(const size_t n_bits, const unsigned int k_hashes,
          bl_hash_function_t hashfun)
 {
-  size_t nbytes;
 
   bloom_t *bl = malloc(sizeof(bloom_t));
   if (!bl)
@@ -37,9 +39,9 @@ bl_alloc(const size_t n_bits, const unsigned int k_hashes,
   bl->significant_bits = (unsigned int)S_which_power_of_two(n_bits);
   bl->shift = 64 - bl->significant_bits;
 
-  nbytes = (1ll << bl->significant_bits) / 8ll + 1ll;
+  bl->nbytes = (1ll << bl->significant_bits) / 8ll;
 
-  bl->bitmap = calloc(sizeof(char), nbytes);
+  bl->bitmap = calloc(sizeof(char), bl->nbytes);
   if (!(bl->bitmap)) {
     free(bl);
     return NULL;
@@ -91,6 +93,123 @@ bl_test(bloom_t *bl, const char * value, const size_t len)
   }
 
   return 1;
+}
+
+static void
+uint64_to_varint(unsigned char **out, uint64_t value) {
+  unsigned char *pos = *out;
+  while (value >= 0x80) {              /* while we are larger than 7 bits long */
+    *pos++ = (value & 0x7f) | 0x80;    /* write out the least significant 7 bits, set the high bit */
+    value >>= 7;                       /* shift off the 7 least significant bits */
+  }
+  *pos++ = (unsigned char)value;       /* encode the last 7 bits without the high bit being set */
+  *out = pos;
+}
+
+static uint64_t
+varint_to_uint64_t(unsigned char **in, size_t max_input_len)
+{
+    uint64_t uv = 0;
+    unsigned int lshift = 0;
+
+    unsigned char *pos = *in;
+    const unsigned char *end = *in + max_input_len;
+    while (pos <= end && *pos & 0x80) {
+        uv |= ((uint64_t)(*pos++ & 0x7F) << lshift);
+        lshift += 7;
+        if (lshift > (sizeof(uint64_t) * 8)) {
+            *in = NULL;
+            return 0;
+        }
+    }
+    if (pos <= end) {
+        uv |= ((uint64_t)*pos++ << lshift);
+    } else {
+        /* end of packet reached before varint parsed */
+        *in = NULL;
+        return 0;
+    }
+
+    *in = pos;
+    return uv;
+}
+
+
+/* may over-allocate a bit */
+int
+bl_serialize(bloom_t *bl, char **out, size_t *out_len)
+{
+  /* Format is pretty simple:
+   * - varint encoding number of hash functions
+   * - varint encoding significant_bits
+   * - X bytes - whatever the length in bytes for the bitmap is */
+
+  unsigned int i;
+  unsigned char *c;
+  char *cur;
+  char *start;
+  uint32_t x;
+  const uint64_t plength = MAX_VARINT_LENGTH /* length of packet, this number */
+                           + bl->nbytes /* the actual data size */
+                           + MAX_VARINT_LENGTH /* k */
+                           + MAX_VARINT_LENGTH; /* significant_bits */
+
+  *out_len = (size_t)plength; /* to be revised further down */
+  start = cur = malloc(*out_len);
+  if (!cur) {
+    *out_len = 0;
+    *out = 0;
+    return 1;
+  }
+  *out = cur;
+
+  uint64_to_varint((unsigned char **)&cur, (uint64_t)bl->k);
+  uint64_to_varint((unsigned char **)&cur, (uint64_t)bl->significant_bits);
+
+  memcpy(cur, bl->bitmap, bl->nbytes);
+  cur += bl->nbytes;
+
+  *out_len = (size_t)(cur-start) + 1;
+  return 0;
+}
+
+bloom_t *
+bl_deserialize(const char *blob, size_t blob_len, bl_hash_function_t hash_function)
+{
+  bloom_t *bl = NULL;
+  unsigned int i;
+  const char const *end = blob + blob_len - 1;
+
+  bl = malloc(sizeof(bloom_t));
+  if (!bl)
+    return NULL;
+  bl->hash_function = hash_function;
+
+  bl->k = (unsigned int) varint_to_uint64_t((unsigned char **)&blob, (size_t)(end-blob));
+  if (blob == NULL) {
+    free(bl);
+    return NULL;
+  }
+
+  bl->significant_bits = (unsigned int) varint_to_uint64_t((unsigned char **)&blob, (size_t)(end-blob));
+  if (blob == NULL) {
+    free(bl);
+    return NULL;
+  }
+
+  bl->shift = 64 - bl->significant_bits;
+  bl->nbytes = end-blob;
+
+  bl->bitmap = malloc(bl->nbytes);
+  if (!bl->bitmap) {
+    free(bl);
+    return NULL;
+  }
+
+  memcpy(bl->bitmap, (char *)blob, bl->nbytes);
+  blob += bl->nbytes;
+
+  return bl;
 }
 
 

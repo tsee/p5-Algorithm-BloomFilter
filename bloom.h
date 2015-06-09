@@ -10,11 +10,15 @@ typedef struct bl_bloom_filter bloom_t;
 
 bloom_t *bl_alloc(size_t n_bits, const unsigned int k_hashes,
                   bl_hash_function_t hashfun);
+void bl_free(bloom_t *bl);
 
 void bl_add(bloom_t *bl, const char *value, const size_t len);
 int bl_test(bloom_t *bl, const char *value, const size_t len);
 
-void bl_free(bloom_t *bl);
+/* returns 0 on success */
+int bl_serialize(bloom_t *bl, char **out, size_t *out_len);
+bloom_t *bl_deserialize(const char *blob, size_t blob_len, bl_hash_function_t hash_function);
+
 
 /* If in doubt about what hash function to use,
  * reach for this included siphash implementation */

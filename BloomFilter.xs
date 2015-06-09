@@ -65,3 +65,29 @@ test(bloom_t *bl, SV *value)
     RETVAL = (IV)bl_test(bl, str, len);
   OUTPUT: RETVAL
 
+SV *
+serialize(bloom_t *bl)
+  PREINIT:
+    char *out;
+    size_t len;
+  CODE:
+    if (0 != bl_serialize(bl, &out, &len))
+      croak("Failed to serialize bloom filter - OOM?");
+    /* Avoid copying the string again */
+    RETVAL = newSV_type(SVt_PV);
+    SvPV_set(RETVAL, out);
+    SvLEN_set(RETVAL, (STRLEN)len);
+    SvCUR_set(RETVAL, (STRLEN)len);
+    SvPOK_on(RETVAL);
+  OUTPUT: RETVAL
+
+bloom_t *
+deserialize(const char *CLASS, SV *blob)
+  PREINIT:
+    char *str;
+    STRLEN len;
+  CODE:
+    str = SvPVbyte(blob, len);
+    RETVAL = bl_deserialize(str, len, bl_siphash);
+  OUTPUT: RETVAL
+
