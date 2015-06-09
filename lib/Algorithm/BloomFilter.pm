@@ -51,6 +51,27 @@ add those values to the bloom filter.
 Given a value (which will be converted to a byte string for this operation),
 test whether that value is part of the set represented by the bloom filter.
 
+=head2 merge
+
+Given another bloom filter of exactly the same configuration (same hash function,
+same number of hash function variants, same number of bits),
+computes a union of the two filters and stores the result in the invocant
+bloom filter.
+
+=head2 serialize
+
+Serializes the bloom filter into a string and returns it.
+
+=head2 deserialize
+
+Class method. Given a previously serialized bloom filter as a string,
+reconstructs the bloom filter. Returns the newly created
+C<Algorithm::BloomFilter> object.
+
+Beware that serialize/deserialize haven't been tested across
+systems with differing endianess, etc. Please do your own testing
+(and possibly submit patches to this caveat).
+
 =head1 CAVEATS
 
 Requires a C<uint64_t> type. Untested on endianness other than x86_64's (little endian).
