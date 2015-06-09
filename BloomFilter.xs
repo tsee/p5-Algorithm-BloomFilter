@@ -44,24 +44,24 @@ DESTROY(bloom_t *bl)
 void
 add(bloom_t *bl, ...)
   PREINIT:
-    char *str;
+    const unsigned char *str;
     STRLEN len;
     unsigned int i;
     SV *value;
   PPCODE:
     for (i = 1; i < items; ++i) {
       value = ST(i);
-      str = SvPVbyte(value, len);
+      str = (const unsigned char *)SvPVbyte(value, len);
       bl_add(bl, str, len);
     }
 
 IV
 test(bloom_t *bl, SV *value)
   PREINIT:
-    char *str;
+    const unsigned char *str;
     STRLEN len;
   CODE:
-    str = SvPVbyte(value, len);
+    str = (const unsigned char *)SvPVbyte(value, len);
     RETVAL = (IV)bl_test(bl, str, len);
   OUTPUT: RETVAL
 

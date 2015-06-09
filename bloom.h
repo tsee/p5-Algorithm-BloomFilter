@@ -12,8 +12,8 @@ bloom_t *bl_alloc(size_t n_bits, const unsigned int k_hashes,
                   bl_hash_function_t hashfun);
 void bl_free(bloom_t *bl);
 
-void bl_add(bloom_t *bl, const char *value, const size_t len);
-int bl_test(bloom_t *bl, const char *value, const size_t len);
+void bl_add(bloom_t *bl, const unsigned char *value, const size_t len);
+int bl_test(bloom_t *bl, const unsigned char *value, const size_t len);
 
 /* returns 0 on success */
 int bl_serialize(bloom_t *bl, char **out, size_t *out_len);

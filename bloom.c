@@ -64,13 +64,13 @@ bl_free(bloom_t *bl)
 
 
 void
-bl_add(bloom_t *bl, const char *value, const size_t len)
+bl_add(bloom_t *bl, const unsigned char *value, const size_t len)
 {
   unsigned int i;
   const unsigned int k = bl->k;
   char *bitfield = bl->bitmap;
-  const uint64_t l1 = bl_siphash((uint64_t)0, 0, value, len);
-  const uint64_t l2 = bl_siphash((uint64_t)1, 0, value, len);
+  const uint64_t l1 = bl_siphash(0, 0, value, len);
+  const uint64_t l2 = bl_siphash(1, 0, value, len);
 
   for (i = 0; i < k; ++i)
   {
@@ -81,13 +81,13 @@ bl_add(bloom_t *bl, const char *value, const size_t len)
 
 
 int
-bl_test(bloom_t *bl, const char * value, const size_t len)
+bl_test(bloom_t *bl, const unsigned char *value, const size_t len)
 {
   unsigned int i;
   const unsigned int k = bl->k;
   char *bitfield = bl->bitmap;
-  const uint64_t l1 = bl_siphash((uint64_t)0, 0, value, len);
-  const uint64_t l2 = bl_siphash((uint64_t)1, 0, value, len);
+  const uint64_t l1 = bl_siphash(0, 0, value, len);
+  const uint64_t l2 = bl_siphash(1, 0, value, len);
 
   for (i = 0; i < k; ++i)
   {
@@ -149,11 +149,8 @@ bl_serialize(bloom_t *bl, char **out, size_t *out_len)
    * - varint encoding significant_bits
    * - X bytes - whatever the length in bytes for the bitmap is */
 
-  unsigned int i;
-  unsigned char *c;
   char *cur;
   char *start;
-  uint32_t x;
   const uint64_t plength = MAX_VARINT_LENGTH /* length of packet, this number */
                            + bl->nbytes /* the actual data size */
                            + MAX_VARINT_LENGTH /* k */
@@ -183,7 +180,6 @@ bloom_t *
 bl_deserialize(const char *blob, size_t blob_len, bl_hash_function_t hash_function)
 {
   bloom_t *bl = NULL;
-  unsigned int i;
   const char const *end = blob + blob_len - 1;
 
   bl = malloc(sizeof(bloom_t));
