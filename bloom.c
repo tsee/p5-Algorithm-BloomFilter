@@ -67,11 +67,12 @@ bl_add(bloom_t *bl, const char *value, const size_t len)
   unsigned int i;
   const unsigned int k = bl->k;
   char *bitfield = bl->bitmap;
+  const uint64_t l1 = bl_siphash((uint64_t)0, 0, value, len);
+  const uint64_t l2 = bl_siphash((uint64_t)1, 0, value, len);
 
   for (i = 0; i < k; ++i)
   {
-    uint64_t l = bl_siphash((uint64_t)i, 0, value, len);
-    l >>= bl->shift;
+    const uint64_t l = (l1 + i*l2) >> bl->shift;
     bitfield[l / 8] |= 1 << (l % 8);
   }
 }
@@ -83,11 +84,12 @@ bl_test(bloom_t *bl, const char * value, const size_t len)
   unsigned int i;
   const unsigned int k = bl->k;
   char *bitfield = bl->bitmap;
+  const uint64_t l1 = bl_siphash((uint64_t)0, 0, value, len);
+  const uint64_t l2 = bl_siphash((uint64_t)1, 0, value, len);
 
   for (i = 0; i < k; ++i)
   {
-    uint64_t l = bl_siphash((uint64_t)i, 0, value, len);
-    l >>= bl->shift;
+    const uint64_t l = (l1 + i*l2) >> bl->shift;
     if (! (bitfield[l / 8] & (1 << (l % 8))) )
       return 0;
   }
