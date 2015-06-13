@@ -73,12 +73,17 @@ serialize(bloom_t *bl)
   CODE:
     if (0 != bl_serialize(bl, &out, &len))
       croak("Failed to serialize bloom filter - OOM?");
+#ifdef newSV_type
     /* Avoid copying the string again */
     RETVAL = newSV_type(SVt_PV);
     SvPV_set(RETVAL, out);
     SvLEN_set(RETVAL, (STRLEN)len);
     SvCUR_set(RETVAL, (STRLEN)len);
     SvPOK_on(RETVAL);
+#else
+    RETVAL = newSVpvn(out, len);
+    free(out);
+#endif
   OUTPUT: RETVAL
 
 bloom_t *
